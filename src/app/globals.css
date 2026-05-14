@@ -1,0 +1,35 @@
+/* src/app/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── UAPB Brand Tokens ──────────────────────────────────────────── */
+:root {
+  --uapb-gold:      #efa522;
+  --uapb-gold-dark: #d4901e;
+  --uapb-black:     #0a0a0a;
+  --uapb-white:     #ffffff;
+}
+
+/* ── Font semantic aliases (consumed by Tailwind config) ────────── */
+/* --font-bebas    → injected by next/font (Bebas Neue)             */
+/* --font-archivo  → injected by next/font (Archivo)                */
+/* --font-opensans → injected by next/font (Open Sans)              */
+
+/* ── Base typography ────────────────────────────────────────────── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+/* ── Tailwind component helpers ─────────────────────────────────── */
+@layer utilities {
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

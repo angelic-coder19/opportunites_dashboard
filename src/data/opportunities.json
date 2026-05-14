@@ -1,0 +1,78 @@
+[
+  {
+    "id": "a1b2c3d4-0001-4e5f-8a9b-c0d1e2f30001",
+    "title": "NSF Research Experience for Undergraduates (REU) – Computational Biology",
+    "institution": "Michigan State University",
+    "summary": "Join a 10-week immersive summer research program exploring the intersection of machine learning and genomics. Students will work alongside faculty mentors on real-world bioinformatics projects and present findings at a national symposium. Stipend, housing, and travel funding are provided.",
+    "contactEmail": "reu-bio@msu.edu",
+    "contactPhone": "517-555-0182",
+    "applicationUrl": "https://example.com/apply/msu-reu-bio",
+    "datePosted": "2025-01-15",
+    "deadline": "2026-05-30",
+    "category": "Off-campus summer research program",
+    "tags": ["Computer Science", "Biology", "Machine Learning", "Genomics", "NSF"]
+  },
+  {
+    "id": "a1b2c3d4-0002-4e5f-8a9b-c0d1e2f30002",
+    "title": "NASA Summer Undergraduate Research Fellowship (SURF)",
+    "institution": "NASA Jet Propulsion Laboratory",
+    "summary": "Work directly with NASA scientists and engineers on cutting-edge space exploration projects at JPL in Pasadena, California. Fellows gain hands-on experience in aerospace engineering, data science, or physics research. Full stipend and relocation assistance are included.",
+    "contactEmail": "surf@jpl.nasa.gov",
+    "applicationUrl": "https://example.com/apply/nasa-surf",
+    "datePosted": "2025-02-01",
+    "deadline": "2026-06-15",
+    "category": "Off-campus summer research program",
+    "tags": ["Engineering", "Physics", "Data Science", "Aerospace", "NASA"]
+  },
+  {
+    "id": "a1b2c3d4-0003-4e5f-8a9b-c0d1e2f30003",
+    "title": "NIH Undergraduate Scholarship Program (UGSP)",
+    "institution": "National Institutes of Health",
+    "summary": "A highly competitive scholarship and summer research program for students from disadvantaged backgrounds committed to biomedical research careers. Scholars receive tuition funding plus paid summer research experience at the NIH campus in Bethesda, MD. Program provides mentorship, career development workshops, and networking with leading researchers.",
+    "contactEmail": "ugsp@nih.gov",
+    "contactPhone": "301-555-0140",
+    "applicationUrl": "https://example.com/apply/nih-ugsp",
+    "datePosted": "2025-01-20",
+    "deadline": "2026-07-01",
+    "category": "Off-campus summer research program",
+    "tags": ["Biomedical", "Health Sciences", "Chemistry", "NIH", "Scholarship"]
+  },
+  {
+    "id": "a1b2c3d4-0004-4e5f-8a9b-c0d1e2f30004",
+    "title": "UAPB Office of RIED – Undergraduate Research Assistant",
+    "institution": "University of Arkansas at Pine Bluff",
+    "summary": "Support the Office of Research, Innovation & Economic Development with ongoing grant-funded projects across STEM disciplines. Students assist faculty researchers with data collection, literature reviews, and lab work on campus. This paid position offers flexible scheduling and valuable research mentorship.",
+    "contactEmail": "ried@uapb.edu",
+    "contactPhone": "870-575-8000",
+    "applicationUrl": "https://example.com/apply/uapb-ried-ra",
+    "datePosted": "2025-03-01",
+    "deadline": "2026-06-01",
+    "category": "On-campus job",
+    "tags": ["STEM", "Research", "On-campus", "Paid", "All Majors"]
+  },
+  {
+    "id": "a1b2c3d4-0005-4e5f-8a9b-c0d1e2f30005",
+    "title": "UAPB IT Department – Student Technology Associate",
+    "institution": "University of Arkansas at Pine Bluff",
+    "summary": "Assist the UAPB Information Technology department with helpdesk support, network maintenance, and campus technology initiatives. Gain real-world IT experience while supporting fellow students and staff. Position includes competitive pay and potential for academic credit.",
+    "contactEmail": "it-jobs@uapb.edu",
+    "applicationUrl": "https://example.com/apply/uapb-it-associate",
+    "datePosted": "2025-03-10",
+    "deadline": "2026-05-01",
+    "category": "On-campus job",
+    "tags": ["Computer Science", "IT", "Networking", "On-campus", "Technology"]
+  },
+  {
+    "id": "a1b2c3d4-0006-4e5f-8a9b-c0d1e2f30006",
+    "title": "DOE Science Undergraduate Laboratory Internship (SULI)",
+    "institution": "Argonne National Laboratory",
+    "summary": "The SULI program encourages undergraduate students to pursue STEM careers by providing research internships at DOE national laboratories. Interns work with laboratory staff scientists on projects in energy, climate, and materials science. A competitive stipend, travel reimbursement, and housing assistance are provided.",
+    "contactEmail": "suli@anl.gov",
+    "contactPhone": "630-555-0299",
+    "applicationUrl": "https://example.com/apply/doe-suli",
+    "datePosted": "2025-02-15",
+    "deadline": "2026-08-15",
+    "category": "Off-campus summer research program",
+    "tags": ["Energy", "Materials Science", "Chemistry", "Physics", "DOE", "Engineering"]
+  }
+]
