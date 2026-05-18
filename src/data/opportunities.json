@@ -74,5 +74,41 @@
     "deadline": "2026-08-15",
     "category": "Off-campus summer research program",
     "tags": ["Energy", "Materials Science", "Chemistry", "Physics", "DOE", "Engineering"]
+  },
+  {
+    "id": "f7e6d5c4-b3a2-4910-8765-432100000007",
+    "title": "UAMS Summer Undergraduate Research Fellowship (SURF)",
+    "institution": "University of Arkansas for Medical Sciences",
+    "summary": "The Department of Biochemistry and Molecular Biology at UAMS sponsors this 10-week fellowship designed to immerse students in graduate-level research culture through hands-on lab projects, faculty interaction, and oral and written research presentations. Fellows receive a $5,000 stipend and a personalized lab coat. Participants are assigned mentors and a study area by mid-March.",
+    "contactEmail": "BCMB.undergrad@uams.edu",
+    "applicationUrl": "https://medicine.uams.edu/biochemistry/undergraduate/surf/",
+    "datePosted": "2026-01-15",
+    "deadline": "2026-03-01",
+    "category": "Off-campus summer research program",
+    "tags": ["Biochemistry", "Molecular Biology", "Biomedical", "HBCU", "Stipend", "UAMS", "Graduate Prep"]
+  },
+  {
+    "id": "f7e6d5c4-b3a2-4910-8765-432100000008",
+    "title": "Rhodes College iRaST Mellon Fellowship – HBCU Student Fellows",
+    "institution": "Rhodes College — Institute for Race and Social Transformation",
+    "summary": "Funded by an $800,000 Andrew W. Mellon Foundation grant, this 8-week fellowship places three HBCU students at the Rhodes Institute for Regional Studies in Memphis to conduct scholarly work on racial equity, discrimination, and justice. Fellows receive a $3,250 stipend plus campus housing and faculty mentorship. Open to full-time rising juniors or seniors with a minimum 3.0 GPA.",
+    "contactEmail": "mckinneyc@rhodes.edu",
+    "applicationUrl": "https://uapb.edu/wp-content/uploads/2026/02/HBCU-Student-Fellows-Call-2026.pdf",
+    "datePosted": "2026-02-01",
+    "deadline": "2026-03-16",
+    "category": "Off-campus summer research program",
+    "tags": ["HBCU", "Social Justice", "Race & Equity", "Humanities", "Mellon Foundation", "Stipend", "Memphis"]
+  },
+  {
+    "id": "f7e6d5c4-b3a2-4910-8765-432100000009",
+    "title": "11th Annual LSUS Regional Student Scholars Forum",
+    "institution": "LSU Shreveport",
+    "summary": "Undergraduate and graduate students from universities across Louisiana, Arkansas, Mississippi, Oklahoma, and Texas are invited to present research and creative work at LSUS. Disciplines include STEM, Health Sciences, Business, Education, Arts & Humanities, and Social Sciences. The event is free with lunch provided, and prizes are awarded for best poster and best presentation in separate undergraduate and graduate tracks.",
+    "contactEmail": "Sanjay.Menon@lsus.edu",
+    "applicationUrl": "https://docs.google.com/forms/d/e/1FAIpQLSewfKkjCkpE9dfFiVpfLanpA-_7PgP7CG-PPSMgTrvyF_PHaA/viewform",
+    "datePosted": "2026-02-15",
+    "deadline": "2026-03-16",
+    "category": "Off-campus summer research program",
+    "tags": ["Conference", "Research Presentation", "All Disciplines", "STEM", "Undergraduate", "Graduate", "Free", "Arkansas"]
   }
 ]
