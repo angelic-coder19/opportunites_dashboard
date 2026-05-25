@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHARED TABLES — used by both the dashboard and the campus map
+// ─────────────────────────────────────────────────────────────
+
+model Building {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String                        // "Caldwell Hall"
+  abbreviation String?                       // "CALD"
+  lat          Decimal?  @db.Decimal(10, 7)  // map pin
+  lng          Decimal?  @db.Decimal(10, 7)
+  description  String?
+  imageUrl     String?   @map("image_url")
+  floorCount   Int?      @map("floor_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  faculty  Faculty[]
+  projects Project[]
+
+  @@map("buildings")
+}
+
+model Faculty {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  title        String?                       // "Associate Professor"
+  department   String?
+  email        String?  @unique
+  phone        String?
+  photoUrl     String?  @map("photo_url")
+  bio          String?
+  buildingId   String?  @map("building_id") @db.Uuid
+  officeNumber String?  @map("office_number")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  building      Building?     @relation(fields: [buildingId], references: [id])
+  projects      Project[]
+  opportunities Opportunity[]
+
+  @@map("faculty")
+}
+
+// ─────────────────────────────────────────────────────────────
+// MAP TABLE — colleague owns and extends this freely
+// ─────────────────────────────────────────────────────────────
+
+model Project {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  description String?
+  facultyId   String?   @map("faculty_id") @db.Uuid
+  buildingId  String?   @map("building_id") @db.Uuid
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date  // NULL = ongoing
+  tags        String[]  @default([])
+  status      String    @default("active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  faculty       Faculty?      @relation(fields: [facultyId], references: [id])
+  building      Building?     @relation(fields: [buildingId], references: [id])
+  opportunities Opportunity[]
+
+  @@map("projects")
+}
+
+// ─────────────────────────────────────────────────────────────
+// DASHBOARD TABLES — opportunities dashboard owns these
+// ─────────────────────────────────────────────────────────────
+
+model Opportunity {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title          String
+  institution    String
+  summary        String?
+  // category validated by Zod: 'Off-campus summer research program' | 'On-campus job'
+  category       String
+  deadline       DateTime? @db.Date
+  datePosted     DateTime  @default(now()) @map("date_posted") @db.Date
+  applicationUrl String?   @map("application_url")
+  contactEmail   String?   @map("contact_email")
+  contactPhone   String?   @map("contact_phone")
+  tags           String[]  @default([])
+
+  // source validated by Zod: 'manual' | 'scrape_reufinder' | 'scrape_pathways' | 'faculty' | 'workday'
+  source   String  @default("manual")
+  sourceUrl String? @map("source_url")  // original URL where this was found
+  sourceId  String? @map("source_id")   // unique key from source for deduplication
+
+  // Optional links — populated for on-campus / faculty-posted opportunities
+  facultyId String? @map("faculty_id") @db.Uuid
+  projectId String? @map("project_id") @db.Uuid
+
+  // status validated by Zod: 'active' | 'draft' | 'archived'
+  status     String  @default("active")
+  isFeatured Boolean @default(false) @map("is_featured")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  faculty Faculty? @relation(fields: [facultyId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
+
+  // Compound unique prevents duplicate scrape entries.
+  // NULL sourceId values (manual entries) are excluded by PostgreSQL's null
+  // handling in unique indexes — so multiple manual entries are allowed.
+  @@unique([source, sourceId])
+
+  @@index([deadline])
+  @@index([category])
+  @@index([status])
+  @@index([source])
+  @@map("opportunities")
+}
+
+model ScrapeSource {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label                String                        // "REUFinder.com"
+  sourceKey            String    @unique @map("source_key") // "reufinder"
+  url                  String
+  // parserType: 'cheerio' | 'playwright' | 'api'
+  parserType           String    @default("cheerio") @map("parser_type")
+  // checkFrequency: 'daily' | 'weekly' | 'monthly'
+  checkFrequency       String    @default("weekly") @map("check_frequency")
+  isActive             Boolean   @default(true) @map("is_active")
+  contentHash          String?   @map("content_hash")  // SHA-256 of last fetched page
+  lastCheckedAt        DateTime? @map("last_checked_at")
+  lastChangedAt        DateTime? @map("last_changed_at")
+  consecutiveEmptyRuns Int       @default(0) @map("consecutive_empty_runs")
+  notes                String?
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  runs ScrapeRun[]
+
+  @@map("scrape_sources")
+}
+
+model ScrapeRun {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sourceId             String    @map("source_id") @db.Uuid
+  startedAt            DateTime  @default(now()) @map("started_at")
+  completedAt          DateTime? @map("completed_at")
+  // status: 'running' | 'success' | 'failed' | 'skipped'
+  status               String    @default("running")
+  contentChanged       Boolean   @default(false) @map("content_changed")
+  opportunitiesFound   Int       @default(0) @map("opportunities_found")
+  opportunitiesAdded   Int       @default(0) @map("opportunities_added")
+  opportunitiesSkipped Int       @default(0) @map("opportunities_skipped")
+  errorMessage         String?   @map("error_message")
+  llmTokensUsed        Int       @default(0) @map("llm_tokens_used")
+
+  source ScrapeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@map("scrape_runs")
+}

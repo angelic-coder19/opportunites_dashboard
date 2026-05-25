@@ -1,66 +1,42 @@
-"use client";
-// src/components/DashboardClient.tsx
-// Owns all filtering state. Receives opportunities from the Server Component
-// parent (page.tsx) which reads directly from the database.
+// src/app/page.tsx
+// Server Component — fetches opportunities directly from Neon via Prisma.
+// No "use client" here: this runs on the server at request time.
 
-import { useState, useMemo } from "react";
+import { prisma } from "@/lib/prisma";
 import { Opportunity } from "@/types";
-import { matchesSearch } from "@/lib/utils";
-import OpportunityCard from "@/components/OpportunityCard";
-import SearchAndFilter from "@/components/SearchAndFilter";
-import EmptyState from "@/components/EmptyState";
+import DashboardClient from "@/components/DashboardClient";
 
-interface DashboardClientProps {
-  opportunities: Opportunity[];
+export const revalidate = 60; // ISR: rebuild this page at most once per minute
+
+async function getOpportunities(): Promise<Opportunity[]> {
+  const rows = await prisma.opportunity.findMany({
+    where: { status: "active" },
+    orderBy: [
+      { isFeatured: "desc" }, // featured listings appear first
+      { deadline: "asc" },    // then soonest deadline first
+      { createdAt: "desc" },
+    ],
+  });
+
+  // Map Prisma rows → the Opportunity interface the components expect.
+  // Prisma returns Date objects; the interface uses ISO strings.
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    institution: row.institution,
+    summary: row.summary ?? "",
+    category: row.category as Opportunity["category"],
+    deadline: row.deadline?.toISOString().split("T")[0] ?? "",
+    datePosted: row.datePosted.toISOString().split("T")[0],
+    applicationUrl: row.applicationUrl ?? "",
+    contactEmail: row.contactEmail ?? undefined,
+    contactPhone: row.contactPhone ?? undefined,
+    tags: row.tags,
+  }));
 }
 
-type CategoryFilter = Opportunity["category"] | "All";
+export default async function DashboardPage() {
+  const opportunities = await getOpportunities();
 
-export default function DashboardClient({ opportunities }: DashboardClientProps) {
-  const [query, setQuery] = useState<string>("");
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("All");
-
-  const filtered = useMemo(() => {
-    return opportunities.filter((opp) => {
-      const categoryMatch =
-        activeCategory === "All" || opp.category === activeCategory;
-      const searchMatch = matchesSearch(
-        query,
-        opp.title,
-        opp.institution,
-        opp.tags
-      );
-      return categoryMatch && searchMatch;
-    });
-  }, [opportunities, query, activeCategory]);
-
-  const handleClearAll = () => {
-    setQuery("");
-    setActiveCategory("All");
-  };
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <SearchAndFilter
-          query={query}
-          onQueryChange={setQuery}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-          totalCount={opportunities.length}
-          filteredCount={filtered.length}
-        />
-      </div>
-
-      {filtered.length === 0 ? (
-        <EmptyState query={query} onClear={handleClearAll} />
-      ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((opp) => (
-            <OpportunityCard key={opp.id} opportunity={opp} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <DashboardClient opportunities={opportunities} />;
 }
