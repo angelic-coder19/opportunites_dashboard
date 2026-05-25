@@ -8,3 +8,18 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+.vercel
+.env*
+
+/src/generated/prisma
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+coverage/
