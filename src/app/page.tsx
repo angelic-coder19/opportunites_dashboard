@@ -1,27 +1,27 @@
 "use client";
-
-// src/app/page.tsx
+// src/components/DashboardClient.tsx
+// Owns all filtering state. Receives opportunities from the Server Component
+// parent (page.tsx) which reads directly from the database.
 
 import { useState, useMemo } from "react";
-import opportunitiesData from "@/data/opportunities.json";
-import { Opportunity, OpportunityCategory } from "@/types";
+import { Opportunity } from "@/types";
 import { matchesSearch } from "@/lib/utils";
 import OpportunityCard from "@/components/OpportunityCard";
 import SearchAndFilter from "@/components/SearchAndFilter";
 import EmptyState from "@/components/EmptyState";
 
-// Cast the raw JSON import to our typed array
-const allOpportunities = opportunitiesData as Opportunity[];
+interface DashboardClientProps {
+  opportunities: Opportunity[];
+}
 
-export default function DashboardPage() {
+type CategoryFilter = Opportunity["category"] | "All";
+
+export default function DashboardClient({ opportunities }: DashboardClientProps) {
   const [query, setQuery] = useState<string>("");
-  const [activeCategory, setActiveCategory] = useState<
-    OpportunityCategory | "All"
-  >("All");
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("All");
 
-  /** Filtered + searched opportunities (memoised for performance) */
   const filtered = useMemo(() => {
-    return allOpportunities.filter((opp) => {
+    return opportunities.filter((opp) => {
       const categoryMatch =
         activeCategory === "All" || opp.category === activeCategory;
       const searchMatch = matchesSearch(
@@ -32,7 +32,7 @@ export default function DashboardPage() {
       );
       return categoryMatch && searchMatch;
     });
-  }, [query, activeCategory]);
+  }, [opportunities, query, activeCategory]);
 
   const handleClearAll = () => {
     setQuery("");
@@ -41,19 +41,17 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      {/* ── Search & Filter bar ─────────────────────────────────── */}
       <div className="mb-8">
         <SearchAndFilter
           query={query}
           onQueryChange={setQuery}
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
-          totalCount={allOpportunities.length}
+          totalCount={opportunities.length}
           filteredCount={filtered.length}
         />
       </div>
 
-      {/* ── Opportunity grid / empty state ───────────────────────── */}
       {filtered.length === 0 ? (
         <EmptyState query={query} onClear={handleClearAll} />
       ) : (
