@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/scrape/reufinder",
+      "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/scrape/pathways",
+      "schedule": "0 7 1 * *"
+    }
+  ]
+}

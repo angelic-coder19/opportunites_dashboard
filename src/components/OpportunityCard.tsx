@@ -87,16 +87,22 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         )}
 
         {/* Dates */}
-        <div className="font-body flex items-center gap-4 text-xs text-gray-400 border-t border-dashed border-gray-100 pt-3">
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5" />
-            Posted: {formatDate(datePosted)}
-          </span>
-          <span className="flex items-center gap-1 font-semibold text-gray-500">
-            <Calendar className="h-3.5 w-3.5 text-[#efa522]" />
-            Deadline: {formatDate(deadline)}
-          </span>
-        </div>
+        {(datePosted || deadline) && (
+          <div className="font-body flex items-center gap-4 text-xs text-gray-400 border-t border-dashed border-gray-100 pt-3">
+            {datePosted && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                Posted: {formatDate(datePosted)}
+              </span>
+            )}
+            {deadline && (
+              <span className="flex items-center gap-1 font-semibold text-gray-500">
+                <Calendar className="h-3.5 w-3.5 text-[#efa522]" />
+                Deadline: {formatDate(deadline)}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Contact */}
         {(contactEmail || contactPhone) && (

@@ -12,8 +12,8 @@ export interface Opportunity {
   contactEmail?: string; // Optional
   contactPhone?: string; // Optional
   applicationUrl: string;// Link to apply
-  datePosted: string;    // ISO Date string (YYYY-MM-DD)
-  deadline: string;      // ISO Date string (YYYY-MM-DD)
+  datePosted: string | null; // ISO Date string (YYYY-MM-DD), or null when unknown (scraped rows)
+  deadline: string | null;   // ISO Date string (YYYY-MM-DD), or null for rolling deadlines
   category: OpportunityCategory;
   tags?: string[];       // e.g., ["Computer Science", "Engineering"]
 }

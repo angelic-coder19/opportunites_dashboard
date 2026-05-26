@@ -2,33 +2,37 @@
 
 /**
  * Calculates the number of days remaining until a deadline.
- * @param deadline - ISO date string (YYYY-MM-DD)
- * @returns Number of days remaining (negative if past deadline)
+ * Returns null for rolling/missing deadlines so callers can render them distinctly
+ * instead of getting NaN.
  */
-export function getDaysRemaining(deadline: string): number {
+export function getDaysRemaining(deadline: string | null): number | null {
+  if (!deadline) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const deadlineDate = new Date(deadline);
+  if (Number.isNaN(deadlineDate.getTime())) return null;
   deadlineDate.setHours(0, 0, 0, 0);
   const diffMs = deadlineDate.getTime() - today.getTime();
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
 /**
- * Returns true if the given deadline has not yet passed.
- * @param deadline - ISO date string (YYYY-MM-DD)
+ * Returns true if the opportunity is still open. Rolling deadlines (null)
+ * are always considered active.
  */
-export function isActive(deadline: string): boolean {
-  return getDaysRemaining(deadline) >= 0;
+export function isActive(deadline: string | null): boolean {
+  const days = getDaysRemaining(deadline);
+  return days === null || days >= 0;
 }
 
 /**
  * Formats an ISO date string into a human-readable format.
- * @param dateStr - ISO date string (YYYY-MM-DD)
- * @returns e.g. "May 30, 2026"
+ * Returns null for missing/invalid input so callers can decide what to render.
  */
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string | null): string | null {
+  if (!dateStr) return null;
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",

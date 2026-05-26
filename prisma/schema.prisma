@@ -86,7 +86,9 @@ model Opportunity {
   // category validated by Zod: 'Off-campus summer research program' | 'On-campus job'
   category       String
   deadline       DateTime? @db.Date
-  datePosted     DateTime  @default(now()) @map("date_posted") @db.Date
+  // Nullable: scraped rows don't know the original post date; defaulting to
+  // now() would mislead users. Manual entries set this explicitly.
+  datePosted     DateTime? @map("date_posted") @db.Date
   applicationUrl String?   @map("application_url")
   contactEmail   String?   @map("contact_email")
   contactPhone   String?   @map("contact_phone")

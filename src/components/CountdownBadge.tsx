@@ -5,11 +5,20 @@
 import { getDaysRemaining } from "@/lib/utils";
 
 interface CountdownBadgeProps {
-  deadline: string; // ISO Date string (YYYY-MM-DD)
+  deadline: string | null; // ISO Date string (YYYY-MM-DD), or null for rolling
 }
 
 export default function CountdownBadge({ deadline }: CountdownBadgeProps) {
   const daysLeft = getDaysRemaining(deadline);
+
+  if (daysLeft === null) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+        Rolling Deadline
+      </span>
+    );
+  }
 
   if (daysLeft < 0) {
     return (

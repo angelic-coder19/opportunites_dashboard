@@ -56,7 +56,7 @@ async function main() {
       parserType: "cheerio",
       checkFrequency: "weekly",
       notes:
-        "WordPress REST API — returns recent posts as JSON. Content is HTML; parsed with cheerio then sent to Claude for extraction.",
+        "WordPress REST API — returns recent posts as JSON. Content is HTML; parsed with cheerio then sent to Gemini for extraction.",
     },
   });
   console.log("  ✓ REUFinder.com");
