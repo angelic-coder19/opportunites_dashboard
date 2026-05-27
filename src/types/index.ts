@@ -8,7 +8,7 @@ export interface Opportunity {
   id: string;            // Unique UUID
   title: string;         // Name of the program
   institution: string;   // e.g., "Michigan State University"
-  summary: string;       // 2-3 sentence description
+  summary: string | null; // 2-3 sentence description; null when not provided
   contactEmail?: string; // Optional
   contactPhone?: string; // Optional
   applicationUrl: string;// Link to apply

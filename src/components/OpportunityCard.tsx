@@ -67,9 +67,11 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
         </div>
 
         {/* Summary */}
-        <p className="font-body text-sm text-gray-600 leading-relaxed line-clamp-3">
-          {summary}
-        </p>
+        {summary && (
+          <p className="font-body text-sm text-gray-600 leading-relaxed line-clamp-3">
+            {summary}
+          </p>
+        )}
 
         {/* Tags */}
         {tags && tags.length > 0 && (

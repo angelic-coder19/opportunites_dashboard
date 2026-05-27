@@ -24,7 +24,7 @@ async function getOpportunities(): Promise<Opportunity[]> {
     id: row.id,
     title: row.title,
     institution: row.institution,
-    summary: row.summary ?? "",
+    summary: row.summary,
     category: row.category as Opportunity["category"],
     deadline: row.deadline?.toISOString().split("T")[0] ?? null,
     datePosted: row.datePosted?.toISOString().split("T")[0] ?? null,
