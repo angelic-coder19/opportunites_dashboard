@@ -68,17 +68,23 @@ export default function RootLayout({
 
                 {/* Nav links */}
                 <nav className="hidden md:flex items-center gap-6">
-                  {["About", "Administration", "Admissions", "Academics", "Campus Life"].map(
-                    (item) => (
-                      <a
-                        key={item}
-                        href="#"
-                        className="font-heading text-black text-[13px] font-bold tracking-widest uppercase hover:text-white transition-colors whitespace-nowrap"
-                      >
-                        {item}
-                      </a>
-                    )
-                  )}
+                  {[
+                    { label: "About", href: "https://uapb.edu/about/" },
+                    { label: "Administration", href: "https://uapb.edu/administration/" },
+                    { label: "Admissions", href: "https://uapb.edu/admissions/" },
+                    { label: "Academics", href: "https://uapb.edu/academics/" },
+                    { label: "Campus Life", href: "https://uapb.edu/campus-life/" },
+                  ].map(({ label, href }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-heading text-black text-[13px] font-bold tracking-widest uppercase hover:text-white transition-colors whitespace-nowrap"
+                    >
+                      {label}
+                    </a>
+                  ))}
                 </nav>
 
                 {/* Right wordmark */}
@@ -115,7 +121,7 @@ export default function RootLayout({
                   Home
                 </a>
                 <span className="text-gray-300" aria-hidden="true">/</span>
-                <a href="#" className="hover:text-[#efa522] transition-colors">
+                <a href="https://uapb.edu/administration/research-innovation-and-economic-development/" className="hover:text-[#efa522] transition-colors">
                   RIED
                 </a>
                 <span className="text-gray-300" aria-hidden="true">/</span>
@@ -279,12 +285,12 @@ export default function RootLayout({
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-[#efa522] transition-colors">
+                    <a href="https://uapb.edu/directory/?staff_keyword=" className="hover:text-[#efa522] transition-colors">
                       Student Resources
                     </a>
                   </li>
                   <li>
-                    <a href="#" className="hover:text-[#efa522] transition-colors">
+                    <a href="https://storage.googleapis.com/faculty_research_seminars/index.html" className="hover:text-[#efa522] transition-colors">
                       Faculty Research
                     </a>
                   </li>
