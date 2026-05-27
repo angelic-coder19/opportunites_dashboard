@@ -22,11 +22,26 @@ interface WPPost {
   content: { rendered: string };
 }
 
-/** Strips HTML tags and normalises whitespace for Gemini. */
+/**
+ * Strips HTML tags and normalises whitespace for Gemini, but PRESERVES the
+ * href of each <a> tag inline as "anchor text <https://url>". Plain .text()
+ * would drop the hrefs and Gemini would return null for applicationUrl.
+ */
 function htmlToPlainText(html: string): string {
   const $ = cheerio.load(html);
   // Remove social sharing widgets, like buttons, etc.
   $(".sharedaddy, .sd-block, .wordads-tag, .jetpack-likes-widget-wrapper").remove();
+  // Inline each link's href next to its visible text so Gemini can see it.
+  // We use parentheses around the URL because cheerio's replaceWith parses
+  // its argument as HTML — angle brackets get eaten as malformed tags.
+  $("a[href]").each((_, el) => {
+    const $a = $(el);
+    const href = $a.attr("href")?.trim();
+    const text = $a.text();
+    if (href && /^https?:\/\//i.test(href)) {
+      $a.replaceWith(`${text} (${href})`);
+    }
+  });
   return $.text().replace(/\s+/g, " ").trim();
 }
 

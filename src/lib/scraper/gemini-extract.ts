@@ -35,7 +35,7 @@ Return a JSON array. Each element must have exactly these keys:
   "institution"     — string, required. Hosting university or organization.
   "summary"         — string, required. Write 2-3 sentences summarizing the opportunity from the description provided.
   "deadline"        — string or null. Convert to YYYY-MM-DD. If only MM/DD is given, use year ${current} unless that date has already passed, then use ${next}.
-  "applicationUrl"  — string or null. The href of the apply link.
+  "applicationUrl"  — string or null. The external apply URL for THIS program. Hyperlinks appear in the text as "Anchor Text (https://example.com)". Choose the URL whose anchor text or surrounding context says "Apply", "Apply Now", "Apply Here", "Program Website", "Learn More", or similar. Do NOT use reufinder.com URLs. Do NOT use social-media URLs. If none of the links clearly point to an apply / program page, return null.
   "contactEmail"    — string or null.
   "citizenshipReq"  — string or null. e.g. "US Citizens & Permanent Residents"
   "levels"          — string or null. e.g. "Sophomores, Juniors, Seniors"
