@@ -1,12 +1,24 @@
 {
   "crons": [
     {
+      "path": "/api/cron/purge-expired",
+      "schedule": "0 1 * * *"
+    },
+    {
       "path": "/api/scrape/reufinder",
       "schedule": "0 6 * * 1"
     },
     {
       "path": "/api/scrape/pathways",
       "schedule": "0 7 1 * *"
+    },
+    {
+      "path": "/api/scrape/colorstack",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/scrape/workday",
+      "schedule": "0 3 * * *"
     }
   ]
 }

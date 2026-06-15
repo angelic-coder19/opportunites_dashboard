@@ -1,7 +1,7 @@
 // src/lib/prisma.ts
 // Singleton prevents multiple PrismaClient instances during Next.js hot reload.
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {

@@ -3,7 +3,16 @@
 
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import type { ScrapeSource, ScrapeRun } from "@prisma/client";
+import type { ScrapeSource, ScrapeRun } from "@/generated/prisma";
+
+function isUniqueConstraintViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: unknown }).code === "P2002"
+  );
+}
 
 export function hashContent(html: string): string {
   return crypto.createHash("sha256").update(html).digest("hex");
@@ -17,6 +26,55 @@ export async function getSource(sourceKey: string): Promise<ScrapeSource> {
   if (!source) throw new Error(`Scrape source not found: ${sourceKey}`);
   if (!source.isActive) throw new Error(`Scrape source is disabled: ${sourceKey}`);
   return source;
+}
+
+/**
+ * Thrown when a scrape run is already in progress for the same source.
+ * Callers (admin routes) should catch this and return HTTP 409.
+ */
+export class ConcurrentRunError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConcurrentRunError";
+  }
+}
+
+// Runs stuck in "running" for longer than this are considered stale/crashed.
+const STALE_RUN_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Creates a scrape_runs row and returns it.
+ * Throws ConcurrentRunError if another run is already in progress.
+ * Automatically kills stale runs (> 10 min old) so crashes don't lock the source forever.
+ */
+export async function startRun(sourceId: string): Promise<ScrapeRun> {
+  const runningRun = await prisma.scrapeRun.findFirst({
+    where: { sourceId, status: "running" },
+    orderBy: { startedAt: "desc" },
+  });
+
+  if (runningRun) {
+    const age = Date.now() - runningRun.startedAt.getTime();
+    if (age < STALE_RUN_MS) {
+      const minutesLeft = Math.ceil((STALE_RUN_MS - age) / 60_000);
+      throw new ConcurrentRunError(
+        `A sync is already in progress for this source. Try again in ~${minutesLeft} minute${minutesLeft !== 1 ? "s" : ""}.`
+      );
+    }
+    // Stale run — mark as failed so it no longer blocks
+    await prisma.scrapeRun.update({
+      where: { id: runningRun.id },
+      data: {
+        status: "failed",
+        completedAt: new Date(),
+        errorMessage: "Timed out — killed by a newer run",
+      },
+    });
+  }
+
+  return prisma.scrapeRun.create({
+    data: { sourceId, status: "running" },
+  });
 }
 
 /**
@@ -58,13 +116,6 @@ export async function recordNoChange(sourceId: string): Promise<void> {
       lastCheckedAt: new Date(),
       consecutiveEmptyRuns: { increment: 1 },
     },
-  });
-}
-
-/** Creates a scrape_runs row and returns it. */
-export async function startRun(sourceId: string): Promise<ScrapeRun> {
-  return prisma.scrapeRun.create({
-    data: { sourceId, status: "running" },
   });
 }
 
@@ -112,16 +163,21 @@ export interface ExtractedOpportunity {
 
 /**
  * Attempts to insert one opportunity.
- * Returns 'added' or 'skipped' (already exists).
+ * Returns 'added' or 'skipped' (already exists — same source/sourceId pair or same URL from any source).
+ *
+ * Race-safe: uses try/catch on the DB unique constraint (P2002) instead of
+ * a read-then-write check, so concurrent runs can't both "see null" and both insert.
+ *
+ * Cross-source dedup: if the same applicationUrl is already stored under a
+ * different source, we skip rather than create a visible duplicate for users.
  */
 export async function insertOpportunity(
   data: ExtractedOpportunity,
   source: string,
   sourceId: string,
   sourceUrl?: string
-): Promise<"added" | "skipped"> {
-  // Required by the Opportunity schema. Gemini occasionally omits these even
-  // though the prompt marks them required, so we skip rather than insert junk.
+): Promise<"added" | "updated" | "skipped"> {
+  // Required fields guard
   if (!data.title?.trim() || !data.institution?.trim()) {
     console.warn(
       `[scraper] Skipping ${source}/${sourceId}: missing required field (title="${data.title}", institution="${data.institution}")`
@@ -129,31 +185,102 @@ export async function insertOpportunity(
     return "skipped";
   }
 
+  if (data.deadline) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const deadline = new Date(data.deadline);
+    if (!Number.isNaN(deadline.getTime()) && deadline < today) {
+      console.log(
+        `[scraper] Skipping ${source}/${sourceId}: deadline already passed (${data.deadline})`
+      );
+      return "skipped";
+    }
+  }
+
+  // ── Cross-source URL dedup ───────────────────────────────────────────────
+  if (data.applicationUrl) {
+    const byUrl = await prisma.opportunity.findFirst({
+      where: {
+        applicationUrl: data.applicationUrl,
+        NOT: { source },
+      },
+      select: { id: true, source: true, sourceId: true },
+    });
+    if (byUrl) {
+      console.log(
+        `[scraper] Cross-source dup skipped: ${source}/${sourceId} matches ${byUrl.source}/${byUrl.sourceId} via URL`
+      );
+      return "skipped";
+    }
+  }
+
   const existing = await prisma.opportunity.findUnique({
     where: { source_sourceId: { source, sourceId } },
   });
-  if (existing) return "skipped";
 
+  if (existing) {
+    const updates: {
+      deadline?: Date;
+      summary?: string;
+      applicationUrl?: string | null;
+      tags?: string[];
+    } = {};
+
+    if (data.deadline) {
+      const existingDate = existing.deadline?.toISOString().slice(0, 10) ?? null;
+      if (existingDate !== data.deadline) {
+        updates.deadline = new Date(data.deadline);
+      }
+    }
+
+    if (
+      data.summary &&
+      data.summary.length > (existing.summary?.length ?? 0) &&
+      (existing.summary?.length ?? 0) < 120
+    ) {
+      updates.summary = data.summary;
+    }
+
+    if (data.applicationUrl && !existing.applicationUrl) {
+      updates.applicationUrl = data.applicationUrl;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await prisma.opportunity.update({
+        where: { id: existing.id },
+        data: updates,
+      });
+      return "updated";
+    }
+
+    return "skipped";
+  }
+
+  // ── Insert (race-safe) ───────────────────────────────────────────────────
   const extraTags: string[] = [];
   if (data.citizenshipReq) extraTags.push(data.citizenshipReq);
   if (data.levels) extraTags.push(data.levels);
 
-  await prisma.opportunity.create({
-    data: {
-      title: data.title,
-      institution: data.institution,
-      summary: data.summary,
-      category: "Off-campus summer research program",
-      deadline: data.deadline ? new Date(data.deadline) : null,
-      applicationUrl: data.applicationUrl ?? null,
-      contactEmail: data.contactEmail ?? null,
-      tags: [...data.tags, ...extraTags].filter(Boolean),
-      source,
-      sourceId,
-      sourceUrl: sourceUrl ?? null,
-      status: "active",
-    },
-  });
-
-  return "added";
+  try {
+    await prisma.opportunity.create({
+      data: {
+        title: data.title,
+        institution: data.institution,
+        summary: data.summary,
+        category: "Off-campus summer research program",
+        deadline: data.deadline ? new Date(data.deadline) : null,
+        applicationUrl: data.applicationUrl ?? null,
+        contactEmail: data.contactEmail ?? null,
+        tags: [...data.tags, ...extraTags].filter(Boolean),
+        source,
+        sourceId,
+        sourceUrl: sourceUrl ?? null,
+        status: "active",
+      },
+    });
+    return "added";
+  } catch (err) {
+    if (isUniqueConstraintViolation(err)) return "skipped";
+    throw err;
+  }
 }

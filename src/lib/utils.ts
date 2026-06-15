@@ -42,22 +42,26 @@ export function formatDate(dateStr: string | null): string | null {
 }
 
 /**
- * Case-insensitive search across title, institution, and tags.
- * @param query - User's search input
- * @param title - Opportunity title
- * @param institution - Opportunity institution
- * @param tags - Optional array of tag strings
+ * Case-insensitive search across title, institution, summary, and tags.
+ * Multiple words are ANDed — each token must appear somewhere in the fields.
  */
 export function matchesSearch(
   query: string,
   title: string,
   institution: string,
-  tags?: string[]
+  tags?: string[],
+  summary?: string | null
 ): boolean {
-  const q = query.toLowerCase().trim();
-  if (!q) return true;
-  if (title.toLowerCase().includes(q)) return true;
-  if (institution.toLowerCase().includes(q)) return true;
-  if (tags?.some((tag) => tag.toLowerCase().includes(q))) return true;
-  return false;
+  const tokens = query
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (tokens.length === 0) return true;
+
+  const haystack = [title, institution, summary ?? "", ...(tags ?? [])]
+    .join(" ")
+    .toLowerCase();
+
+  return tokens.every((token) => haystack.includes(token));
 }

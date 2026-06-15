@@ -4,7 +4,7 @@
 // status, isFeatured, source_id, timestamps. Derived from Prisma so it stays
 // in sync with the schema.
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma";
 
 export type AdminOpportunity = Prisma.OpportunityGetPayload<{}>;
 
@@ -19,8 +19,9 @@ export const OPPORTUNITY_SOURCES = [
   "manual",
   "scrape_reufinder",
   "scrape_pathways",
+  "scrape_colorstack",
+  "scrape_workday",
   "faculty",
-  "workday",
 ] as const;
 
 export type OpportunityCategoryValue = (typeof OPPORTUNITY_CATEGORIES)[number];

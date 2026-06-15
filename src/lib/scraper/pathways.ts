@@ -23,6 +23,11 @@ import {
   insertOpportunity,
   type ExtractedOpportunity,
 } from "./index";
+import {
+  extractDeadlineFromFields,
+  extractDeadlineFromText,
+  parseFlexibleDate,
+} from "./date-utils";
 
 const DETAIL_BASE = "https://pathwaystoscience.org/";
 const DEFAULT_ENRICH_CAP = 50;
@@ -43,9 +48,11 @@ interface ListingEntry {
 
 function parseDeadline(text: string): string | null {
   const match = text.match(/Application Deadline:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (!match) return null;
-  const [, month, day, year] = match;
-  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  if (match) {
+    const [, month, day, year] = match;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+  return extractDeadlineFromText(text);
 }
 
 function fundingTags(imgAlts: string[]): string[] {
@@ -179,6 +186,7 @@ interface DetailFields {
   institution: string | null;
   summary: string | null;
   applicationUrl: string | null;
+  deadline: string | null;
   /** Array of distinct level strings (e.g. ["Undergraduates - Junior", "Undergraduates - Senior"]). */
   levels: string[];
   tags: string[];
@@ -214,6 +222,10 @@ export function parseDetailPage(html: string): DetailFields {
 
   const summary = fields["Description"]?.slice(0, 800) || null;
   const levels = parseLevels(mainHtml);
+  const deadline =
+    extractDeadlineFromFields(fields) ??
+    extractDeadlineFromText(mainHtml) ??
+    parseFlexibleDate(fields["Application Deadline"] ?? "");
 
   // Institution = the program with "(Lead)" annotation in "Participating Institution(s)".
   // The labeled-field text strips formatting, so we look for "<institution> (Lead)".
@@ -223,7 +235,7 @@ export function parseDetailPage(html: string): DetailFields {
 
   const tagsFromHtml = parseTagsFromDetail(mainHtml);
 
-  return { title, institution, summary, applicationUrl: applyUrl, levels, tags: tagsFromHtml };
+  return { title, institution, summary, applicationUrl: applyUrl, deadline, levels, tags: tagsFromHtml };
 }
 
 async function fetchDetail(url: string): Promise<string> {
@@ -327,7 +339,7 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
           institution,
           summary:
             detail.summary ?? `Research opportunity at ${institution}.`,
-          deadline: entry.deadline,
+          deadline: entry.deadline ?? detail.deadline,
           applicationUrl: detail.applicationUrl,
           contactEmail: null,
           citizenshipReq: null,

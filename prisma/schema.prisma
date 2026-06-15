@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -145,6 +146,14 @@ model ScrapeSource {
   runs ScrapeRun[]
 
   @@map("scrape_sources")
+}
+
+model AppSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
 }
 
 model ScrapeRun {

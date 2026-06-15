@@ -5,11 +5,12 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 .DS_Store
 .vscode/
 .idea/
 .vercel
-.env*
 
 /src/generated/prisma
 
@@ -24,3 +25,4 @@ pnpm-debug.log*
 
 coverage/
 CLAUDE.md
+*.har

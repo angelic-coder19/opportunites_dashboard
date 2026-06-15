@@ -1,50 +1,14 @@
 // prisma/seed.ts
 // Run with: npx prisma db seed
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../src/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
-import opportunitiesData from "../src/data/opportunities.json";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Seeding opportunities...");
-
-  for (const opp of opportunitiesData) {
-    await prisma.opportunity.upsert({
-      where: {
-        // Manual entries don't have a sourceId, so upsert by id instead.
-        // The @@unique([source, sourceId]) constraint handles scraped dedup.
-        id: opp.id,
-      },
-      update: {
-        // If re-seeding, keep the record but refresh mutable fields.
-        title: opp.title,
-        institution: opp.institution,
-        summary: opp.summary,
-        tags: opp.tags ?? [],
-      },
-      create: {
-        id: opp.id,
-        title: opp.title,
-        institution: opp.institution,
-        summary: opp.summary,
-        category: opp.category,
-        deadline: opp.deadline ? new Date(opp.deadline) : null,
-        datePosted: new Date(opp.datePosted),
-        applicationUrl: opp.applicationUrl ?? null,
-        contactEmail: opp.contactEmail ?? null,
-        contactPhone: opp.contactPhone ?? null,
-        tags: opp.tags ?? [],
-        source: "manual",
-        status: "active",
-      },
-    });
-    console.log(`  ✓ ${opp.institution} — ${opp.title.slice(0, 50)}`);
-  }
-
-  console.log("\n🌱 Seeding scrape sources...");
+  console.log("🌱 Seeding scrape sources...");
 
   await prisma.scrapeSource.upsert({
     where: { sourceKey: "reufinder" },
@@ -75,6 +39,36 @@ async function main() {
     },
   });
   console.log("  ✓ Pathways to Science");
+
+  await prisma.scrapeSource.upsert({
+    where: { sourceKey: "colorstack" },
+    update: {},
+    create: {
+      label: "ColorStack",
+      sourceKey: "colorstack",
+      url: "https://app.colorstack.io/opportunities.data",
+      parserType: "api",
+      checkFrequency: "daily",
+      notes:
+        "ColorStack member opportunities feed. Requires OTP-authenticated session cookie stored in app_settings(colorstack_cookie). Session is set via the admin /admin/scrapers panel.",
+    },
+  });
+  console.log("  ✓ ColorStack");
+
+  await prisma.scrapeSource.upsert({
+    where: { sourceKey: "workday" },
+    update: {},
+    create: {
+      label: "Workday Talent Marketplace",
+      sourceKey: "workday",
+      url: "https://wd5.myworkday.com/uasys/internalapi/ccx/internalapi/talentMarketplace/v1/uasys/searchJobs",
+      parserType: "api",
+      checkFrequency: "daily",
+      notes:
+        "UA System Workday internal API. Only UAPB (Pine Bluff) jobs are imported. Requires session-secure-token stored in app_settings(workday_token), extracted from browser DevTools.",
+    },
+  });
+  console.log("  ✓ Workday Talent Marketplace");
 
   console.log("\n✅ Seeding complete.");
 }
