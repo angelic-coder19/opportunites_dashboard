@@ -31,7 +31,21 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // scrollbar-hide: hides scrollbars while keeping scroll functionality
+    // Used in SearchAndFilter for horizontal pill rows on mobile.
+    function ({ addUtilities }: { addUtilities: (u: Record<string, Record<string, string>>) => void }) {
+      addUtilities({
+        ".scrollbar-hide": {
+          "-ms-overflow-style": "none",
+          "scrollbar-width": "none",
+        },
+        ".scrollbar-hide::-webkit-scrollbar": {
+          display: "none",
+        },
+      });
+    },
+  ],
 };
 
 export default config;
