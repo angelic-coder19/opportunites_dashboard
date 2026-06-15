@@ -4,6 +4,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import type { ScrapeSource, ScrapeRun } from "@/generated/prisma";
+import { ensureScrapeSource } from "./scrape-sources";
 
 function isUniqueConstraintViolation(err: unknown): boolean {
   return (
@@ -18,11 +19,19 @@ export function hashContent(html: string): string {
   return crypto.createHash("sha256").update(html).digest("hex");
 }
 
-/** Returns the ScrapeSource row for a given key, or throws if not found. */
+/** Returns the ScrapeSource row for a given key, auto-creating known sources if missing. */
 export async function getSource(sourceKey: string): Promise<ScrapeSource> {
-  const source = await prisma.scrapeSource.findUnique({
+  let source = await prisma.scrapeSource.findUnique({
     where: { sourceKey },
   });
+
+  if (!source) {
+    await ensureScrapeSource(sourceKey);
+    source = await prisma.scrapeSource.findUnique({
+      where: { sourceKey },
+    });
+  }
+
   if (!source) throw new Error(`Scrape source not found: ${sourceKey}`);
   if (!source.isActive) throw new Error(`Scrape source is disabled: ${sourceKey}`);
   return source;

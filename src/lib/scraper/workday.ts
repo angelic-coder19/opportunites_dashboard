@@ -245,22 +245,7 @@ interface WorkdaySearchResponse {
 }
 
 // ─── Scrape source bootstrap ──────────────────────────────────────────────────
-
-async function ensureWorkdaySource() {
-  await prisma.scrapeSource.upsert({
-    where: { sourceKey: "workday" },
-    update: {},
-    create: {
-      label: "Workday Talent Marketplace",
-      sourceKey: "workday",
-      url: SEARCH_URL,
-      parserType: "api",
-      checkFrequency: "daily",
-      notes:
-        "UA System Workday internal API. Only UAPB (Pine Bluff) jobs are imported. Connect via Admin → Scrapers (cURL, browser, or token).",
-    },
-  });
-}
+// Handled centrally in getSource() via scrape-sources.ts
 
 class AuthError extends Error {
   constructor(msg: string) {
@@ -547,8 +532,6 @@ export async function importWorkdayJobs(rawJobs: unknown[]): Promise<{
   skipped: number;
   filtered: number;
 }> {
-  await ensureWorkdaySource();
-
   const jobs = rawJobs
     .map((raw) => normalizeWorkdayJob(raw))
     .filter((job): job is WorkdayJob => job !== null);
@@ -587,8 +570,6 @@ export async function runWorkdayScraper(): Promise<{
   filtered: number;
   authError: boolean;
 }> {
-  await ensureWorkdaySource();
-
   const mode = await getWorkdayConnectMode();
   if (mode === "bridge") {
     throw new Error(
