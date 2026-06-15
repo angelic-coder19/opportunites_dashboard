@@ -34,6 +34,12 @@ export default function AdminLayout({
                 Opportunities
               </Link>
               <Link
+                href="/admin/scrapers"
+                className="font-heading text-[11px] uppercase tracking-widest text-gray-600 hover:text-[#efa522]"
+              >
+                Scrapers
+              </Link>
+              <Link
                 href="/"
                 target="_blank"
                 rel="noopener noreferrer"
