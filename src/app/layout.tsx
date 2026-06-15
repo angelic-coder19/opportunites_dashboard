@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Bebas_Neue, Archivo, Open_Sans } from "next/font/google";
+import AIAssistant from "@/components/AIAssistant";
 import "./globals.css";
 
 // ── Google Fonts ────────────────────────────────────────────────────────────
@@ -26,10 +27,36 @@ const openSans = Open_Sans({
 });
 
 // ── Metadata ────────────────────────────────────────────────────────────────
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://ried-dashboard.vercel.app").replace(
+  /\/$/,
+  ""
+);
+
 export const metadata: Metadata = {
-  title: "Opportunities Dashboard | UAPB RIED",
+  title: {
+    default: "Opportunities Dashboard | UAPB RIED",
+    template: "%s | UAPB RIED",
+  },
   description:
-    "Centralized directory of on-campus and off-campus research opportunities for University of Arkansas at Pine Bluff students.",
+    "Centralized directory of on-campus jobs and off-campus research opportunities for University of Arkansas at Pine Bluff students.",
+  metadataBase: new URL(APP_URL),
+  openGraph: {
+    siteName: "UAPB RIED Opportunities Dashboard",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/images/uapb-campus.webp",
+        width: 1200,
+        height: 630,
+        alt: "University of Arkansas at Pine Bluff Campus",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/images/uapb-campus.webp"],
+  },
 };
 
 // ── Layout ──────────────────────────────────────────────────────────────────
@@ -236,6 +263,11 @@ export default function RootLayout({
             MAIN CONTENT
         ══════════════════════════════════════════════════════ */}
         <main className="flex-1">{children}</main>
+
+        {/* ══════════════════════════════════════════════════════
+            AI ASSISTANT — floating widget, rendered client-side
+        ══════════════════════════════════════════════════════ */}
+        <AIAssistant />
 
         {/* ══════════════════════════════════════════════════════
             FOOTER
