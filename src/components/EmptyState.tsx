@@ -31,7 +31,7 @@ export default function EmptyState({ query, onClear }: EmptyStateProps) {
         onClick={onClear}
         className="font-heading mt-6 rounded-xl bg-[#efa522] px-6 py-2.5 text-sm font-bold tracking-wide text-black hover:bg-[#d4901e] transition-colors focus:outline-none focus:ring-2 focus:ring-[#efa522] focus:ring-offset-2"
       >
-        Clear Search
+        Clear filters
       </button>
     </div>
   );
