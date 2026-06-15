@@ -6,7 +6,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, verifySessionEdge } from "@/lib/auth-edge";
 
 // Paths under /admin/* and /api/admin/* that should NOT require auth.
-const PUBLIC_PATHS = new Set(["/admin/login", "/api/admin/login"]);
+const PUBLIC_PATHS = new Set([
+  "/admin/login",
+  "/api/admin/login",
+  "/api/workday/bridge",
+]);
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -35,5 +39,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/opportunities/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/opportunities/:path*", "/api/admin/:path*", "/api/workday/:path*"],
 };
