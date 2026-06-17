@@ -1,4 +1,4 @@
-// Removes stale rows from the database so the public dashboard stays current.
+// Removes stale, placeholder, and invalid rows from the database.
 
 import { prisma } from "@/lib/prisma";
 
@@ -22,20 +22,53 @@ export async function purgeExpiredOpportunities(): Promise<number> {
   return result.count;
 }
 
-/** Remove mock/placeholder rows seeded from opportunities.json (example.com URLs). */
-export async function purgePlaceholderOpportunities(): Promise<number> {
+/** Remove mock, placeholder, and incomplete rows that should not appear publicly. */
+export async function purgeInvalidOpportunities(): Promise<number> {
   const result = await prisma.opportunity.deleteMany({
     where: {
-      applicationUrl: { contains: "example.com", mode: "insensitive" },
+      OR: [
+        { applicationUrl: { contains: "example.com", mode: "insensitive" } },
+        { applicationUrl: { contains: "placeholder", mode: "insensitive" } },
+        { applicationUrl: { contains: "localhost", mode: "insensitive" } },
+        {
+          AND: [
+            { applicationUrl: null },
+            { source: "manual" },
+          ],
+        },
+        {
+          AND: [
+            { applicationUrl: "" },
+            { source: "manual" },
+          ],
+        },
+        {
+          source: "scrape_pathways",
+          applicationUrl: { contains: "pathwaystoscience.org", mode: "insensitive" },
+        },
+        { title: { contains: "test opportunity", mode: "insensitive" } },
+        { title: { contains: "lorem ipsum", mode: "insensitive" } },
+        { institution: { in: ["Unknown Institution", "TBD", "N/A", "Example University"] } },
+      ],
     },
   });
+
   if (result.count > 0) {
-    console.log(`[purge] Deleted ${result.count} placeholder opportunit${result.count === 1 ? "y" : "ies"}`);
+    console.log(`[purge] Deleted ${result.count} invalid opportunit${result.count === 1 ? "y" : "ies"}`);
   }
   return result.count;
 }
 
-export async function runOpportunityMaintenance(): Promise<void> {
-  await purgePlaceholderOpportunities();
-  await purgeExpiredOpportunities();
+/** @deprecated Use purgeInvalidOpportunities */
+export async function purgePlaceholderOpportunities(): Promise<number> {
+  return purgeInvalidOpportunities();
+}
+
+export async function runOpportunityMaintenance(): Promise<{
+  deletedInvalid: number;
+  deletedExpired: number;
+}> {
+  const deletedInvalid = await purgeInvalidOpportunities();
+  const deletedExpired = await purgeExpiredOpportunities();
+  return { deletedInvalid, deletedExpired };
 }
