@@ -1,51 +1,42 @@
-// src/app/opportunity/[id]/page.tsx
+// src/app/opportunity/[slug]/page.tsx
 // Individual opportunity detail page.
 // Serves proper Open Graph meta tags so shared links preview correctly on
 // WhatsApp, Twitter/X, Facebook, LinkedIn, iMessage, Discord, etc.
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Calendar, Mail, Phone, ExternalLink } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { findOpportunityBySlugOrId } from "@/lib/opportunity-lookup";
+import {
+  appBaseUrl,
+  opportunityPublicPath,
+  opportunityPublicSlug,
+  opportunityPublicUrl,
+} from "@/lib/opportunity-url";
+import { buildShareDescription, buildSharePayload } from "@/lib/share";
 import { formatDate, isActive } from "@/lib/utils";
 import ShareButton from "@/components/ShareButton";
 import CountdownBadge from "@/components/CountdownBadge";
 
 export const revalidate = 60;
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-function baseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
-    "https://ried-dashboard.vercel.app"
-  );
-}
-
-async function getOpportunity(id: string) {
-  return prisma.opportunity.findUnique({ where: { id } });
-}
-
 // ── Meta tags ─────────────────────────────────────────────────────────────────
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const opp = await getOpportunity(id);
+  const { slug } = await params;
+  const opp = await findOpportunityBySlugOrId(slug);
   if (!opp) {
     return { title: "Opportunity Not Found | UAPB RIED" };
   }
 
-  const description = opp.summary
-    ? opp.summary.slice(0, 160)
-    : `${opp.category} at ${opp.institution}. Explore and apply through the UAPB RIED Opportunities Dashboard.`;
-
-  const url = `${baseUrl()}/opportunity/${opp.id}`;
-  const image = `${baseUrl()}/images/uapb-campus.webp`;
+  const description = buildShareDescription(opp);
+  const url = opportunityPublicUrl(opp.id, opp.title);
+  const image = `${appBaseUrl()}/images/uapb-campus.webp`;
 
   return {
     title: `${opp.title} | UAPB RIED Opportunities`,
@@ -55,7 +46,7 @@ export async function generateMetadata({
       description,
       url,
       siteName: "UAPB RIED Opportunities Dashboard",
-      images: [{ url: image, width: 1200, height: 630, alt: "UAPB Campus" }],
+      images: [{ url: image, width: 1200, height: 630, alt: opp.title }],
       type: "article",
     },
     twitter: {
@@ -73,16 +64,21 @@ export async function generateMetadata({
 export default async function OpportunityPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const opp = await getOpportunity(id);
+  const { slug } = await params;
+  const opp = await findOpportunityBySlugOrId(slug);
   if (!opp) notFound();
+
+  const canonicalSlug = opportunityPublicSlug(opp.id, opp.title);
+  if (slug !== canonicalSlug) {
+    redirect(opportunityPublicPath(opp.id, opp.title));
+  }
 
   const deadline = opp.deadline?.toISOString().split("T")[0] ?? null;
   if (!isActive(deadline)) notFound();
   const datePosted = opp.datePosted?.toISOString().split("T")[0] ?? null;
-  const shareUrl = `${baseUrl()}/opportunity/${opp.id}`;
+  const share = buildSharePayload(opp);
   const isOffCampus = opp.category === "Off-campus summer research program";
 
   return (
@@ -130,9 +126,9 @@ export default async function OpportunityPage({
             <div className="flex items-start gap-2 shrink-0">
               <CountdownBadge deadline={deadline} />
               <ShareButton
-                url={shareUrl}
-                title={opp.title}
-                summary={opp.summary}
+                url={share.url}
+                title={share.title}
+                text={share.text}
               />
             </div>
           </div>
@@ -219,9 +215,9 @@ export default async function OpportunityPage({
               </a>
             )}
             <ShareButton
-              url={shareUrl}
-              title={opp.title}
-              summary={opp.summary}
+              url={share.url}
+              title={share.title}
+              text={share.text}
               variant="button"
             />
           </div>

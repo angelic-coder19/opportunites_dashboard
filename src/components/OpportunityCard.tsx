@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 import { Opportunity } from "@/types";
+import { opportunityPublicPath, opportunityPublicUrl } from "@/lib/opportunity-url";
+import { buildShareText } from "@/lib/share";
 import { formatDate, isActive } from "@/lib/utils";
 import CountdownBadge from "./CountdownBadge";
 import ShareButton from "./ShareButton";
@@ -10,11 +12,6 @@ import { MapPin, Mail, Phone, Calendar, ExternalLink } from "lucide-react";
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
-}
-
-function appBaseUrl(): string {
-  if (typeof window !== "undefined") return window.location.origin;
-  return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
 }
 
 export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
@@ -34,7 +31,19 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
   const active = isActive(deadline);
   const isOffCampus = category === "Off-campus summer research program";
-  const shareUrl = `${appBaseUrl()}/opportunity/${id}`;
+  const detailPath = opportunityPublicPath(id, title);
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${detailPath}`
+      : opportunityPublicUrl(id, title);
+  const shareText = buildShareText({
+    id,
+    title,
+    institution,
+    category,
+    deadline,
+    summary,
+  });
 
   return (
     <article
@@ -64,7 +73,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             </div>
 
             {/* Title — links to detail page */}
-            <Link href={`/opportunity/${id}`} className="group/title">
+            <Link href={detailPath} className="group/title">
               <h2 className="font-heading text-[15px] font-extrabold text-gray-900 leading-snug group-hover/title:text-[#efa522] transition-colors duration-150 line-clamp-2">
                 {title}
               </h2>
@@ -79,7 +88,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
           {/* Countdown + share */}
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <CountdownBadge deadline={deadline} />
-            <ShareButton url={shareUrl} title={title} summary={summary} />
+            <ShareButton url={shareUrl} title={title} text={shareText} />
           </div>
         </div>
 
@@ -172,7 +181,7 @@ export default function OpportunityCard({ opportunity }: OpportunityCardProps) {
             )}
           </a>
           <Link
-            href={`/opportunity/${id}`}
+            href={detailPath}
             className="font-heading flex items-center justify-center rounded-xl border border-gray-200 px-3 py-2.5 text-xs text-gray-500 hover:border-[#efa522] hover:text-[#efa522] transition-colors"
             aria-label="View details"
           >
