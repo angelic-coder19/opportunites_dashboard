@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { Opportunity } from "@/types";
-import { matchesSearch } from "@/lib/utils";
+import { getDaysRemaining, matchesSearch } from "@/lib/utils";
 import OpportunityCard from "@/components/OpportunityCard";
 import SearchAndFilter from "@/components/SearchAndFilter";
 import EmptyState from "@/components/EmptyState";
@@ -14,7 +14,8 @@ interface DashboardClientProps {
 
 type CategoryFilter = Opportunity["category"] | "All";
 
-const MAX_TOPIC_FILTERS = 10;
+const MAX_TOPIC_FILTERS = 8;
+const CLOSING_SOON_DAYS = 14;
 
 function getPopularTags(opportunities: Opportunity[]): string[] {
   const counts = new Map<string, number>();
@@ -34,6 +35,7 @@ function getPopularTags(opportunities: Opportunity[]): string[] {
 export default function DashboardClient({ opportunities }: DashboardClientProps) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("All");
+  const [closingSoon, setClosingSoon] = useState(false);
   const [activeTag, setActiveTag] = useState("");
 
   const popularTags = useMemo(
@@ -45,11 +47,13 @@ export default function DashboardClient({ opportunities }: DashboardClientProps)
     return opportunities.filter((opp) => {
       const categoryMatch =
         activeCategory === "All" || opp.category === activeCategory;
+
       const tagMatch =
         !activeTag ||
         (opp.tags ?? []).some(
           (t) => t.toLowerCase() === activeTag.toLowerCase()
         );
+
       const searchMatch = matchesSearch(
         query,
         opp.title,
@@ -57,13 +61,20 @@ export default function DashboardClient({ opportunities }: DashboardClientProps)
         opp.tags,
         opp.summary
       );
-      return categoryMatch && tagMatch && searchMatch;
+
+      const daysLeft = getDaysRemaining(opp.deadline);
+      const closingSoonMatch =
+        !closingSoon ||
+        (daysLeft !== null && daysLeft >= 0 && daysLeft <= CLOSING_SOON_DAYS);
+
+      return categoryMatch && tagMatch && searchMatch && closingSoonMatch;
     });
-  }, [opportunities, query, activeCategory, activeTag]);
+  }, [opportunities, query, activeCategory, activeTag, closingSoon]);
 
   function clearAll() {
     setQuery("");
     setActiveCategory("All");
+    setClosingSoon(false);
     setActiveTag("");
   }
 
@@ -75,6 +86,8 @@ export default function DashboardClient({ opportunities }: DashboardClientProps)
           onQueryChange={setQuery}
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
+          closingSoon={closingSoon}
+          onClosingSoonChange={setClosingSoon}
           activeTag={activeTag}
           onTagChange={setActiveTag}
           popularTags={popularTags}

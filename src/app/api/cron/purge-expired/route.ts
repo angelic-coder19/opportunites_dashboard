@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   purgeExpiredOpportunities,
-  purgePlaceholderOpportunities,
+  purgeInvalidOpportunities,
 } from "@/lib/purge-opportunities";
 
 export async function POST(req: NextRequest) {
@@ -15,14 +15,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [placeholders, expired] = await Promise.all([
-    purgePlaceholderOpportunities(),
+  const [invalid, expired] = await Promise.all([
+    purgeInvalidOpportunities(),
     purgeExpiredOpportunities(),
   ]);
 
   return NextResponse.json({
     ok: true,
-    deletedPlaceholders: placeholders,
+    deletedInvalid: invalid,
     deletedExpired: expired,
   });
 }

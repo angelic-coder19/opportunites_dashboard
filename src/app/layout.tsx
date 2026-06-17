@@ -40,6 +40,11 @@ export const metadata: Metadata = {
   description:
     "Centralized directory of on-campus jobs and off-campus research opportunities for University of Arkansas at Pine Bluff students.",
   metadataBase: new URL(APP_URL),
+  icons: {
+    icon: "/images/uapb-logo.png",
+    apple: "/images/uapb-logo.png",
+    shortcut: "/images/uapb-logo.png",
+  },
   openGraph: {
     siteName: "UAPB RIED Opportunities Dashboard",
     type: "website",
