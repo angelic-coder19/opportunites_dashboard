@@ -8,8 +8,8 @@
 // resolves to { id: "abc123" }.
 
 import {
+  extractDeadlineFromRecord,
   extractDeadlineFromText,
-  parseFlexibleDate,
 } from "@/lib/scraper/date-utils";
 
 export interface ColorStackTag {
@@ -28,6 +28,8 @@ export interface ColorStackOpportunity {
   posterFirstName: string | null;
   posterLastName: string | null;
   tags: ColorStackTag[];
+  /** Parsed from list payload when available (e.g. expiresAt). */
+  deadline: string | null;
 }
 
 export interface ColorStackDetail {
@@ -165,6 +167,7 @@ function castOpportunity(o: Record<string, unknown>): ColorStackOpportunity | nu
     posterFirstName: str(o.posterFirstName) ?? null,
     posterLastName: str(o.posterLastName) ?? null,
     tags,
+    deadline: extractColorStackDeadline(o),
   };
 }
 
@@ -173,31 +176,11 @@ function str(v: unknown): string | null {
   return null;
 }
 
-// Convert an ISO datetime string to YYYY-MM-DD (date only). Returns null if
-// the input is null, empty, or not a recognizable date.
 function extractColorStackDeadline(opp: Record<string, unknown>): string | null {
-  const fieldCandidates = [
-    opp.deadline,
-    opp.closesAt,
-    opp.expiresAt,
-    opp.applicationDeadline,
-    opp.dueDate,
-    opp.endDate,
-    opp.closeDate,
-    opp.dueAt,
-  ];
-
-  for (const candidate of fieldCandidates) {
-    const parsed = normalizeDate(str(candidate));
-    if (parsed) return parsed;
-  }
+  const fromRecord = extractDeadlineFromRecord(opp);
+  if (fromRecord) return fromRecord;
 
   const description =
     str(opp.description) ?? str(opp.summary) ?? str(opp.body) ?? "";
   return extractDeadlineFromText(description);
-}
-
-function normalizeDate(v: string | null): string | null {
-  if (!v) return null;
-  return parseFlexibleDate(v);
 }

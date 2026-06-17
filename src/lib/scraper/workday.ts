@@ -11,8 +11,8 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getSource, startRun, finishRun, insertOpportunity } from "./index";
 import {
+  extractDeadlineFromRecord,
   extractDeadlineFromText,
-  parseFlexibleDate,
 } from "./date-utils";
 
 const BASE_URL = "https://wd5.myworkday.com";
@@ -372,11 +372,8 @@ function htmlToText(html: string): string {
 }
 
 function extractWorkdayDeadline(job: WorkdayJob): string | null {
-  const structured = job.closingDate ?? job.applicationDeadline;
-  if (structured) {
-    const parsed = parseFlexibleDate(structured);
-    if (parsed) return parsed;
-  }
+  const fromRecord = extractDeadlineFromRecord(job as Record<string, unknown>);
+  if (fromRecord) return fromRecord;
 
   const sources = [job.jobDescription ?? "", job.jobDescriptionFormatted ?? ""];
   for (const source of sources) {

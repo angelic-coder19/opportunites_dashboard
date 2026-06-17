@@ -254,6 +254,7 @@ function sleep(ms: number): Promise<void> {
 export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise<{
   added: number;
   skipped: number;
+  updated: number;
   enriched: number;
   noApplyLink: number;
   changed: boolean;
@@ -264,6 +265,7 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
 
   let totalAdded = 0;
   let totalSkipped = 0;
+  let totalUpdated = 0;
   let totalEnriched = 0;
   let totalNoApply = 0;
 
@@ -286,7 +288,7 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
         { found: 0, added: 0, skipped: 0 },
         false
       );
-      return { added: 0, skipped: 0, enriched: 0, noApplyLink: 0, changed: false };
+      return { added: 0, skipped: 0, updated: 0, enriched: 0, noApplyLink: 0, changed: false };
     }
 
     const entries = parseListing(listingHtml);
@@ -297,10 +299,12 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
         source: "scrape_pathways",
         sourceId: { in: entries.map((e) => e.sourceId) },
       },
-      select: { sourceId: true },
+      select: { sourceId: true, deadline: true },
     });
-    const existingIds = new Set(existing.map((r) => r.sourceId));
-    const toEnrich = entries.filter((e) => !existingIds.has(e.sourceId));
+    const existingById = new Map(
+      existing.map((row) => [row.sourceId!, row.deadline])
+    );
+    const toEnrich = entries.filter((e) => !existingById.has(e.sourceId));
 
     // ── 3. Enrich up to enrichCap new programs this run
     const batch = toEnrich.slice(0, enrichCap);
@@ -354,6 +358,7 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
           entry.detailUrl
         );
         if (result === "added") totalAdded++;
+        else if (result === "updated") totalUpdated++;
         else totalSkipped++;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -361,6 +366,22 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
         totalSkipped++;
       }
       await sleep(ENRICH_DELAY_MS);
+    }
+
+    // Backfill listing deadlines for rows already stored without one.
+    for (const entry of entries) {
+      if (!entry.deadline || !existingById.has(entry.sourceId)) continue;
+      if (existingById.get(entry.sourceId)) continue;
+
+      const updated = await prisma.opportunity.updateMany({
+        where: {
+          source: "scrape_pathways",
+          sourceId: entry.sourceId,
+          deadline: null,
+        },
+        data: { deadline: new Date(entry.deadline) },
+      });
+      if (updated.count > 0) totalUpdated++;
     }
 
     // Only mark hash as updated when we've enriched everything; otherwise leave
@@ -384,6 +405,7 @@ export async function runPathwaysScraper(opts?: { enrichCap?: number }): Promise
     return {
       added: totalAdded,
       skipped: totalSkipped,
+      updated: totalUpdated,
       enriched: totalEnriched,
       noApplyLink: totalNoApply,
       changed: true,

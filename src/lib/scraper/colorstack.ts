@@ -22,7 +22,7 @@ const LIST_URL = "https://app.colorstack.io/opportunities.data";
 const DETAIL_BASE = "https://app.colorstack.io/opportunities/";
 const OPPORTUNITY_BASE = "https://app.colorstack.io/opportunities/";
 const DETAIL_DELAY_MS = 400;
-const MAX_DETAIL_FETCHES = 40;
+const MAX_DETAIL_FETCHES = 80;
 
 export const SESSION_COOKIE_NAME = "__session_member-profile_production";
 const OTP_SEND_URL = "https://app.colorstack.io/login/otp/send.data";
@@ -283,6 +283,7 @@ function sleep(ms: number): Promise<void> {
 export async function runColorStackScraper(): Promise<{
   added: number;
   skipped: number;
+  updated: number;
   detailsFetched: number;
   authError: boolean;
 }> {
@@ -299,6 +300,7 @@ export async function runColorStackScraper(): Promise<{
 
   let totalAdded = 0;
   let totalSkipped = 0;
+  let totalUpdated = 0;
   let detailsFetched = 0;
 
   try {
@@ -313,7 +315,7 @@ export async function runColorStackScraper(): Promise<{
         { found: 0, added: 0, skipped: 0, error: "Session expired" },
         false
       );
-      return { added: 0, skipped: 0, detailsFetched: 0, authError: true };
+      return { added: 0, skipped: 0, updated: 0, detailsFetched: 0, authError: true };
     }
     if (!listRes.ok && listRes.status !== 202) {
       throw new Error(`ColorStack list returned ${listRes.status}`);
@@ -323,7 +325,7 @@ export async function runColorStackScraper(): Promise<{
 
     if (opportunities.length === 0) {
       await finishRun(run.id, "skipped", { found: 0, added: 0, skipped: 0 }, false);
-      return { added: 0, skipped: 0, detailsFetched: 0, authError: false };
+      return { added: 0, skipped: 0, updated: 0, detailsFetched: 0, authError: false };
     }
 
     const existingRows = await prisma.opportunity.findMany({
@@ -333,26 +335,30 @@ export async function runColorStackScraper(): Promise<{
       },
       select: { sourceId: true, deadline: true },
     });
-    const existingIds = new Set(existingRows.map((r) => r.sourceId));
-    const missingDeadlineIds = new Set(
-      existingRows.filter((r) => !r.deadline).map((r) => r.sourceId)
+    const existingById = new Map(
+      existingRows.map((r) => [r.sourceId!, r.deadline])
     );
 
-    const newOps = opportunities.filter((o) => !existingIds.has(o.id));
-    const refreshOps = opportunities.filter((o) => missingDeadlineIds.has(o.id));
+    const newOps = opportunities.filter((o) => !existingById.has(o.id));
+    const needsDeadline = opportunities.filter(
+      (o) => !existingById.has(o.id) || !existingById.get(o.id)
+    );
+
     const seen = new Set<string>();
-    const toEnrich = [...newOps, ...refreshOps].filter((op) => {
-      if (seen.has(op.id)) return false;
-      seen.add(op.id);
-      return true;
-    }).slice(0, MAX_DETAIL_FETCHES);
+    const toEnrich = needsDeadline
+      .filter((op) => {
+        if (seen.has(op.id)) return false;
+        seen.add(op.id);
+        return true;
+      })
+      .slice(0, MAX_DETAIL_FETCHES);
 
     totalSkipped += opportunities.length - newOps.length;
 
     for (const op of toEnrich) {
       let description: string | null = null;
       let externalLink: string | null = null;
-      let deadline: string | null = null;
+      let deadline: string | null = op.deadline;
 
       try {
         const detailRes = await colorstackFetch(
@@ -365,7 +371,7 @@ export async function runColorStackScraper(): Promise<{
           const detail = parseOpportunityDetail(detailText);
           description = detail?.description ?? null;
           externalLink = detail?.externalLink ?? null;
-          deadline = detail?.deadline ?? null;
+          deadline = detail?.deadline ?? op.deadline ?? null;
           detailsFetched++;
         }
       } catch {
@@ -395,10 +401,39 @@ export async function runColorStackScraper(): Promise<{
       );
 
       if (result === "added") totalAdded++;
+      else if (result === "updated") totalUpdated++;
       else totalSkipped++;
     }
 
-    totalSkipped += Math.max(0, newOps.length - toEnrich.filter((o) => !existingIds.has(o.id)).length);
+    // Apply list-level deadlines without a detail fetch when possible.
+    for (const op of opportunities) {
+      if (!op.deadline || existingById.has(op.id) === false) continue;
+      if (existingById.get(op.id)) continue;
+      if (toEnrich.some((item) => item.id === op.id)) continue;
+
+      const result = await insertOpportunity(
+        {
+          title: op.title,
+          institution: op.companyName,
+          summary: `Opportunity posted by ${op.companyName} on ColorStack.`,
+          deadline: op.deadline,
+          applicationUrl: `${OPPORTUNITY_BASE}${op.id}`,
+          contactEmail: null,
+          citizenshipReq: null,
+          levels: null,
+          tags: op.tags.map((t) => t.name).filter(Boolean).slice(0, 15),
+        },
+        "scrape_colorstack",
+        op.id,
+        `${OPPORTUNITY_BASE}${op.id}`
+      );
+      if (result === "updated") totalUpdated++;
+    }
+
+    totalSkipped += Math.max(
+      0,
+      newOps.length - toEnrich.filter((o) => !existingById.has(o.id)).length
+    );
 
     await finishRun(
       run.id,
@@ -410,6 +445,7 @@ export async function runColorStackScraper(): Promise<{
     return {
       added: totalAdded,
       skipped: totalSkipped,
+      updated: totalUpdated,
       detailsFetched,
       authError: false,
     };
