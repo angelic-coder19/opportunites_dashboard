@@ -15,7 +15,8 @@ import {
 interface ShareButtonProps {
   url: string;
   title: string;
-  summary?: string | null;
+  /** Concise, pre-formatted message body (not the full summary). */
+  text?: string;
   /** "icon" (default) = small ghost icon button; "button" = full pill button */
   variant?: "icon" | "button";
 }
@@ -33,7 +34,7 @@ const PLATFORMS = [
       </svg>
     ),
     href: (url: string, text: string) =>
-      `https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`,
+      `https://wa.me/?text=${encodeURIComponent(`${text}\n\n${url}`)}`,
   },
   {
     key: "twitter",
@@ -79,12 +80,14 @@ const PLATFORMS = [
 export default function ShareButton({
   url,
   title,
-  summary,
+  text,
   variant = "icon",
 }: ShareButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const shareText = text ?? title;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -98,15 +101,11 @@ export default function ShareButton({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const shareText = summary
-    ? `${title} — ${summary.slice(0, 120)}…`
-    : title;
-
   async function handleClick() {
     // Prefer native Web Share API (shows native sheet on mobile)
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title, text: summary ?? title, url });
+        await navigator.share({ title, text: shareText, url });
         return;
       } catch {
         // User cancelled or API unavailable — fall through to dropdown
@@ -116,12 +115,12 @@ export default function ShareButton({
   }
 
   async function copyLink() {
+    const clipboardText = `${shareText}\n\n${url}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(clipboardText);
     } catch {
-      // Clipboard not available (insecure context?) — select URL manually
-      const el = document.createElement("input");
-      el.value = url;
+      const el = document.createElement("textarea");
+      el.value = clipboardText;
       document.body.appendChild(el);
       el.select();
       document.execCommand("copy");

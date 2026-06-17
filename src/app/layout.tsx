@@ -27,7 +27,7 @@ const openSans = Open_Sans({
 });
 
 // ── Metadata ────────────────────────────────────────────────────────────────
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://ried-dashboard.vercel.app").replace(
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://opportunites-dashboard.vercel.app").replace(
   /\/$/,
   ""
 );
