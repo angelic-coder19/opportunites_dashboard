@@ -6,6 +6,7 @@
 //
 // Requires DATABASE_URL in the environment (.env).
 
+import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
 import { runOpportunityMaintenance } from "../src/lib/purge-opportunities";
 

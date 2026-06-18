@@ -7,6 +7,7 @@
 // Run with a small cap first (e.g. 5), inspect the results, then re-run with
 // a higher cap (e.g. 999) for the full backfill.
 
+import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
 import { runPathwaysScraper } from "../src/lib/scraper/pathways";
 
